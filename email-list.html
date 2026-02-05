@@ -1,0 +1,344 @@
+<div class="list-wrapper">
+    <!-- Main Content Area -->
+    <div class="list-content">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="header-left">
+                <h4 class="page-title">Email Communication Logs</h4>
+                <span class="item-count">({{ count }} emails)</span>
+            </div>
+            <div class="header-actions">
+                <div class="view-toggle-compact">
+                    <button class="toggle-icon" [class.active]="viewMode === 'list'" (click)="setViewMode('list')" title="List View">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button class="toggle-icon" [class.active]="viewMode === 'card'" (click)="setViewMode('card')" title="Card View">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                </div>
+                <button class="btn-action info" (click)="toggleTestForm()">
+                    <i class="fas fa-paper-plane"></i>
+                    <span>{{ showTestForm ? 'Hide Form' : 'Send Test' }}</span>
+                </button>
+                <button class="btn-action primary" (click)="exportToCSV()">
+                    <i class="fas fa-download"></i>
+                    <span>Export</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Test Email Form Panel -->
+        <div class="test-form-panel" *ngIf="showTestForm">
+            <div class="form-panel-header">
+                <h6 class="form-panel-title"><i class="fas fa-paper-plane"></i> Send Test Email</h6>
+                <button class="btn-close-form" (click)="toggleTestForm()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="form-panel-body">
+                <form (ngSubmit)="sendTestEmail()" #testForm="ngForm">
+                    <div class="form-grid">
+                        <!-- TP Internal Config Toggle - Only shown for direct access -->
+                        <div class="form-group full-width" *ngIf="isDirectAccess">
+                            <label class="toggle-label">
+                                <input type="checkbox" name="useTPInternalConfig" [(ngModel)]="useTPInternalConfig" (change)="onTPInternalToggle()">
+                                <span class="toggle-text">
+                                    <i class="fas fa-server"></i> Use TP Internal Email Configuration
+                                </span>
+                                <span class="toggle-hint">(Skip application selection and use internal SMTP relay)</span>
+                            </label>
+                        </div>
+                        <div class="form-group" *ngIf="!useTPInternalConfig">
+                            <label class="form-label">Select Application <span class="required">*</span></label>
+                            <ng-select [items]="applicationList"
+                                       bindLabel="appName"
+                                       bindValue="id"
+                                       name="appId"
+                                       [(ngModel)]="emailData.appId"
+                                       (change)="onApplicationChange()"
+                                       [compareWith]="compareAppId"
+                                       [placeholder]="'-- Select Application --'"
+                                       [clearable]="false"
+                                       class="custom-ng-select">
+                            </ng-select>
+                        </div>
+                        <div class="form-group" *ngIf="useTPInternalConfig">
+                            <label class="form-label">Application</label>
+                            <input type="text" class="form-input readonly" value="TP Internal (No app required)" disabled>
+                            <span class="form-hint success"><i class="fas fa-check-circle"></i> Using TP Internal email configuration</span>
+                        </div>
+                        <div class="form-group" *ngIf="!isInternalApp()">
+                            <label class="form-label">SMTP User Email <span class="required">*</span></label>
+                            <input type="email" class="form-input" [class.readonly]="!!emailData.smtpUserEmail" name="smtpUserEmail" [(ngModel)]="emailData.smtpUserEmail" [readonly]="!!emailData.smtpUserEmail" [placeholder]="emailData.smtpUserEmail ? 'Auto-populated' : 'Enter SMTP email'">
+                        </div>
+                        <div class="form-group" *ngIf="isInternalApp()">
+                            <label class="form-label">From Email Address</label>
+                            <input type="text" class="form-input readonly" [value]="emailData.smtpUserEmail || 'Configured in Application'" disabled>
+                            <span class="form-hint success"><i class="fas fa-shield-alt"></i> Set during application registration</span>
+                        </div>
+                        <div class="form-group" *ngIf="!isInternalApp()">
+                            <label class="form-label">App Password <span class="required">*</span></label>
+                            <input type="password" class="form-input" name="appPassword" [(ngModel)]="emailData.appPassword" placeholder="Enter App Password">
+                            <span class="form-hint"><i class="fas fa-key"></i> Your SMTP app-specific password</span>
+                        </div>
+                        <div class="form-group" *ngIf="isInternalApp()">
+                            <label class="form-label">App Password</label>
+                            <input type="text" class="form-input readonly" value="Automatically Managed" disabled>
+                            <span class="form-hint success"><i class="fas fa-shield-alt"></i> Using TP Internal - no password required</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To Recipients <span class="required">*</span></label>
+                            <div class="search-field-wrapper">
+                                <ng-select [items]="adUsersForRecipients"
+                                           bindLabel="mail"
+                                           [(ngModel)]="emailData.toRecipients"
+                                           name="toRecipients"
+                                           placeholder="Search by name or email..."
+                                           [clearable]="true"
+                                           (search)="onToRecipientsSearch($event.term)"
+                                           [compareWith]="compareRecipientEmails"
+                                           class="custom-ng-select">
+                                    <ng-template ng-option-tmp let-item="item">
+                                        <div class="d-flex align-items-center">
+                                            <span class="fw-bold">{{item.displayName}}</span>
+                                            <small class="text-muted ms-2">{{item.mail}}</small>
+                                        </div>
+                                    </ng-template>
+                                </ng-select>
+                                <span *ngIf="toRecipientsLoading" class="loader-inline"><i class="fas fa-spinner fa-spin"></i></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cc Recipients</label>
+                            <div class="search-field-wrapper">
+                                <ng-select [items]="adUsersForCCRecipients"
+                                           bindLabel="mail"
+                                           [(ngModel)]="emailData.ccRecipients"
+                                           name="ccRecipients"
+                                           placeholder="Search by name or email..."
+                                           [clearable]="true"
+                                           (search)="onCCRecipientsSearch($event.term)"
+                                           [compareWith]="compareRecipientEmails"
+                                           class="custom-ng-select">
+                                    <ng-template ng-option-tmp let-item="item">
+                                        <div class="d-flex align-items-center">
+                                            <span class="fw-bold">{{item.displayName}}</span>
+                                            <small class="text-muted ms-2">{{item.mail}}</small>
+                                        </div>
+                                    </ng-template>
+                                </ng-select>
+                                <span *ngIf="ccRecipientsLoading" class="loader-inline"><i class="fas fa-spinner fa-spin"></i></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Subject <span class="required">*</span></label>
+                            <input type="text" class="form-input" name="subject" [(ngModel)]="emailData.subject">
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label">Body Preview</label>
+                            <textarea class="form-textarea" name="body" rows="2" [(ngModel)]="emailData.body"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="isHtml" [(ngModel)]="emailData.isHtml">
+                                <span class="checkbox-label">Is HTML content?</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="useTPAssist" [(ngModel)]="emailData.useTPAssist">
+                                <span class="checkbox-label"><i class="fas fa-magic"></i> Use TPAssist AI Enhancement</span>
+                            </label>
+                        </div>
+                        <div class="form-group full-width" *ngIf="emailData.useTPAssist && emailData.body">
+                            <button type="button" class="btn-action info" (click)="previewTPAssist()" [disabled]="isEnhancing">
+                                <i class="fas" [class.fa-magic]="!isEnhancing" [class.fa-spinner]="isEnhancing" [class.fa-spin]="isEnhancing"></i>
+                                {{ isEnhancing ? 'Enhancing...' : 'Preview TPAssist Enhancement' }}
+                            </button>
+                        </div>
+                        <!-- TPAssist Preview Section -->
+                        <div class="form-group full-width" *ngIf="showTPAssistPreview">
+                            <label class="form-label"><i class="fas fa-magic"></i> TPAssist Enhanced Preview</label>
+                            <div class="tpassist-preview" [innerHTML]="emailData.isHtml ? tpAssistPreview : null">
+                                <pre *ngIf="!emailData.isHtml">{{ tpAssistPreview }}</pre>
+                            </div>
+                            <div class="tpassist-actions">
+                                <button type="button" class="btn-action success" (click)="applyTPAssistPreview()">
+                                    <i class="fas fa-check"></i> Apply Enhancement
+                                </button>
+                                <button type="button" class="btn-action secondary" (click)="showTPAssistPreview = false">
+                                    <i class="fas fa-times"></i> Dismiss
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Attachments</label>
+                            <input type="file" class="form-input-file" multiple (change)="onFileChange($event)">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancel" (click)="toggleTestForm()">Cancel</button>
+                        <button type="submit" class="btn-submit" [disabled]="!isFormValid() || isSending">
+                            <i class="fas fa-paper-plane"></i> {{ isSending ? 'Sending...' : 'Send Now' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search emails..." 
+                           [ngModel]="searchTerm" (ngModelChange)="onSearchInput($event)">
+                </div>
+                <ng-select [items]="applicationList"
+                           bindLabel="appName"
+                           bindValue="appName"
+                           [(ngModel)]="selectedAppName"
+                           (change)="onAppFilterChange()"
+                           [placeholder]="'All Applications'"
+                           class="filter-select">
+                </ng-select>
+            </div>
+            <button class="btn-clear-sm" *ngIf="selectedAppName || searchTerm" (click)="clearFilters()">
+                <i class="fas fa-times"></i> Clear
+            </button>
+        </div>
+
+        <!-- Data Table (List View) -->
+        <div class="data-table-wrapper" *ngIf="viewMode === 'list'">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="col-user">User (UPN)</th>
+                        <th class="col-app">Application</th>
+                        <th class="col-subject">Subject & Preview</th>
+                        <th class="col-service">Email Service</th>
+                        <th class="col-date">Timestamp (UTC)</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngIf="emailList.length === 0">
+                        <td colspan="7" class="empty-row">
+                            <i class="fas fa-envelope-open-text"></i>
+                            <p>No email activity to display.</p>
+                        </td>
+                    </tr>
+                    <tr *ngFor="let item of emailList; trackBy: trackByEmailId" class="data-row">
+                        <td>
+                            <div class="table-info">
+                                <span class="table-info-primary" [title]="item.upn">{{ item.upn }}</span>
+                                <span class="table-info-secondary" [title]="item.username">{{ item.username }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="app-badge">
+                                <i class="fas fa-cube"></i>
+                                <span>{{ item.appName }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="table-info">
+                                <span class="table-info-primary text-truncate" [title]="item.subject">{{ item.subject }}</span>
+                                <span class="table-info-secondary text-truncate" [title]="item.body">{{ item.body }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="service-badge">
+                                <i class="fas fa-server"></i> {{ item.serviceName || 'TP Internal' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="table-info">
+                                <span class="table-info-primary">{{ item.creationDateTime | date:'MMM dd, yyyy' }}</span>
+                                <span class="table-info-secondary">{{ item.creationDateTime | date:'hh:mm a' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="status-badge" [class.sent]="item.status === 'Sent'" 
+                                  [class.pending]="item.status === 'Pending'" 
+                                  [class.failed]="item.status !== 'Sent' && item.status !== 'Pending'">
+                                <i class="fas" [class.fa-check-circle]="item.status === 'Sent'" 
+                                   [class.fa-clock]="item.status === 'Pending'"
+                                   [class.fa-times-circle]="item.status !== 'Sent' && item.status !== 'Pending'"></i>
+                                {{ item.status === 'Sent' ? 'Delivered' : (item.status === 'Pending' ? 'Pending' : 'Failed') }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-view-detail" (click)="openEmailDetail(item.emailId)" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Card View -->
+        <div *ngIf="viewMode === 'card'">
+            <div class="empty-state" *ngIf="emailList.length === 0">
+                <i class="fas fa-envelope-open-text"></i>
+                <p>No email activity to display.</p>
+            </div>
+            <div class="card-grid" *ngIf="emailList.length > 0">
+                <div class="item-card" *ngFor="let item of emailList; trackBy: trackByEmailId">
+                    <div class="card-header">
+                        <div class="card-info">
+                            <div class="card-info-secondary">{{ item.upn }}</div>
+                            <div class="card-info-primary">{{ item.username }}</div>
+                        </div>
+                        <span class="status-badge" [class.sent]="item.status === 'Sent'" 
+                              [class.pending]="item.status === 'Pending'" 
+                              [class.failed]="item.status !== 'Sent' && item.status !== 'Pending'">
+                            {{ item.status === 'Sent' ? 'Delivered' : (item.status === 'Pending' ? 'Pending' : 'Failed') }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-row">
+                            <div class="app-badge">
+                                <i class="fas fa-cube"></i>
+                                <span>{{ item.appName }}</span>
+                            </div>
+                        </div>
+                        <div class="card-subject">
+                            <div class="card-info-primary">{{ item.subject }}</div>
+                            <div class="card-info-secondary text-clamp">{{ item.body }}</div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <span class="service-badge">
+                            <i class="fas fa-server"></i> {{ item.serviceName }}
+                        </span>
+                        <span class="card-date">
+                            <i class="fas fa-calendar-alt"></i>
+                            {{ item.creationDateTime | date:'MMM dd, yyyy' }} · {{ item.creationDateTime | date:'hh:mm a' }}
+                        </span>
+                        <button class="btn-view-detail-card" (click)="openEmailDetail(item.emailId)" title="View Details">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-wrapper">
+            <app-pagination 
+                [totalCount]="count" 
+                [pageSize]="pageSize" 
+                [currentPage]="currentPage" 
+                (pageChange)="onPageChange($event)">
+            </app-pagination>
+        </div>
+    </div>
+</div>
+
+<!-- Email Detail Modal -->
+<app-email-detail-modal 
+    [emailId]="selectedEmailId" 
+    [isOpen]="showEmailDetailModal"
+    (closeModal)="closeEmailDetailModal()">
+</app-email-detail-modal>

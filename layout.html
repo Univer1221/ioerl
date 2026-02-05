@@ -1,0 +1,138 @@
+<!-- 
+  LAYOUT ARCHITECTURE:
+  - Single wrapper div controls collapsed state via class
+  - Sidebar width is the ONLY thing that changes
+  - Main area margin-left follows sidebar width
+-->
+<div class="layout-wrapper" [class.collapsed]="isSidebarCollapsed">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a class="sidebar-brand" [routerLink]="dashboardUrl">
+        <img [src]="IMAGE_PATHS.TP_LOGO" alt="TP Mailer" class="brand-logo">
+        <span class="brand-text">TP MAILER</span>
+      </a>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- Home -->
+      <div class="nav-item" routerLinkActive="active">
+        <a class="nav-link" routerLink="/Dashboard" title="Home">
+          <i class="fas fa-home"></i>
+          <span class="nav-text">Home</span>
+        </a>
+      </div>
+
+      <!-- App User (ADMIN only) -->
+      <div class="nav-item" *ngIf="role === 'ADMIN'" routerLinkActive="active">
+        <a class="nav-link" href="javascript:void(0)" data-toggle="collapse" data-target="#collapseAppUser" title="App User">
+          <i class="fas fa-briefcase"></i>
+          <span class="nav-text">App User</span>
+        </a>
+        <div id="collapseAppUser" class="collapse" data-parent=".sidebar-nav">
+          <div class="collapse-inner">
+            <a class="collapse-item" routerLink="/User/UserDetails">User List</a>
+            <a class="collapse-item" routerLink="/Admin/AppUser/Registration">Registration</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Email Service (ADMIN only) -->
+      <div class="nav-item" *ngIf="role === 'ADMIN'" routerLinkActive="active">
+        <a class="nav-link" href="javascript:void(0)" data-toggle="collapse" data-target="#collapseEmailService" title="Email Service">
+          <i class="fas fa-server"></i>
+          <span class="nav-text">Email Service</span>
+        </a>
+        <div id="collapseEmailService" class="collapse" data-parent=".sidebar-nav">
+          <div class="collapse-inner">
+            <a class="collapse-item" routerLink="/Admin/Lookup/EmailServices/List">List</a>
+            <a class="collapse-item" routerLink="/Admin/Lookup/EmailServices/Add">Add</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="nav-item" routerLinkActive="active">
+        <a class="nav-link" href="javascript:void(0)" data-toggle="collapse" data-target="#collapseEmail" title="Email">
+          <i class="fas fa-envelope"></i>
+          <span class="nav-text">Email</span>
+        </a>
+        <div id="collapseEmail" class="collapse" data-parent=".sidebar-nav">
+          <div class="collapse-inner">
+            <a class="collapse-item" routerLink="/Email/List">List</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Application -->
+      <div class="nav-item" routerLinkActive="active">
+        <a class="nav-link" href="javascript:void(0)" data-toggle="collapse" data-target="#collapseApplication" title="Application">
+          <i class="fas fa-cube"></i>
+          <span class="nav-text">Application</span>
+        </a>
+        <div id="collapseApplication" class="collapse" data-parent=".sidebar-nav">
+          <div class="collapse-inner">
+            <a class="collapse-item" routerLink="/Application/List">List</a>
+            <a class="collapse-item" routerLink="/Application/Add">Add</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile -->
+      <div class="nav-item" routerLinkActive="active">
+        <a class="nav-link" href="javascript:void(0)" data-toggle="collapse" data-target="#collapseProfile" title="Profile">
+          <i class="fas fa-user-circle"></i>
+          <span class="nav-text">Profile</span>
+        </a>
+        <div id="collapseProfile" class="collapse" data-parent=".sidebar-nav">
+          <div class="collapse-inner">
+            <a class="collapse-item" routerLink="/Account/PasswordUpdate">Password Update</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main Area -->
+  <main class="main-area">
+    <header class="topbar">
+      <button class="hamburger-btn" (click)="toggleSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+        <i class="fa fa-bars"></i>
+      </button>
+
+      <div class="user-dropdown" [class.open]="isUserDropdownOpen">
+        <div class="dropdown-toggle" (click)="toggleUserDropdown($event)">
+          <div class="user-info">
+            <span class="user-email">{{ displayName || email }}</span>
+            <span class="user-role">{{ role }}</span>
+          </div>
+          <div class="profile-img-wrapper">
+            <img class="profile-img" [src]="headerProfileImage || IMAGE_PATHS.USER_PROFILE" alt="Profile">
+            <span class="status-dot"></span>
+          </div>
+        </div>
+        <div class="dropdown-menu" [class.show]="isUserDropdownOpen">
+          <div class="dropdown-header">Account</div>
+          <a class="dropdown-item" href="javascript:void(0)">
+            <i class="fas fa-user"></i>
+            Profile
+          </a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item text-danger" href="javascript:void(0)" (click)="logout()">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <router-outlet></router-outlet>
+    </div>
+
+    <footer class="footer">
+      Copyright &copy; Tp Email API 2026 | All Rights Reserved
+    </footer>
+  </main>
+</div>
+

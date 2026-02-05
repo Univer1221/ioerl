@@ -1,0 +1,13 @@
+/* Application Form Styles */
+
+// Inline loader for search fields
+.loader-inline {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7c3aed;
+    font-size: 14px;
+    z-index: 10;
+    pointer-events: none;
+}

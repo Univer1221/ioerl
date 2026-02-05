@@ -1,0 +1,134 @@
+<div class="add-user-wrapper">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <button class="btn-back" type="button" (click)="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="header-title">
+                <h4 class="page-title">Add New User</h4>
+                <span class="page-subtitle">Create a new user account</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="form-card">
+        <div class="card-header">
+            <i class="fas fa-user-plus"></i>
+            <span>User Information</span>
+        </div>
+        
+        <div class="card-body">
+            <form (ngSubmit)="onSubmit()" #regForm="ngForm">
+                <div class="form-row">
+                    <div class="form-col" style="flex: 0 0 100%; max-width: 100%;">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Name <span class="required">*</span>
+                            </label>
+                            <div class="search-field-wrapper">
+                                <ng-select [items]="adUsers"
+                                           bindLabel="displayName"
+                                           [(ngModel)]="selectedAdUser"
+                                           name="usernameSelect"
+                                           placeholder="Search by Name or UPN..."
+                                           [clearable]="true"
+                                           [addTag]="addCustomUser"
+                                           [addTagText]="'Use this name'"
+                                           (search)="onAdUserSearch($event.term)"
+                                           (change)="onAdUserSelect($event)"
+                                           (clear)="onAdUserClear()"
+                                           class="custom-ng-select">
+                                <ng-template ng-option-tmp let-item="item">
+                                    <div class="d-flex align-items-center">
+                                        <img *ngIf="item.photoUrl" [src]="item.photoUrl" style="width:28px;height:28px;border-radius:50%;margin-right:8px;" />
+                                        <div>
+                                            <div class="fw-bold">{{item.displayName}}</div>
+                                            <small class="text-muted" *ngIf="item.mail">{{item.mail}}</small>
+                                        </div>
+                                    </div>
+                                </ng-template>
+                                <ng-template ng-label-tmp let-item="item">
+                                    <span>{{item.displayName}}</span>
+                                </ng-template>
+                            </ng-select>
+                                <span *ngIf="adUserLoading" class="loader-inline"><i class="fas fa-spinner fa-spin"></i></span>
+                            </div>
+                            <input type="hidden" name="username" [(ngModel)]="registrationData.username" required />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Email Address <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" 
+                                       class="form-input" 
+                                       name="email" 
+                                       [(ngModel)]="registrationData.email" 
+                                       placeholder="user@example.com" 
+                                       required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label class="form-label">
+                                UPN <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-id-card"></i>
+                                <input type="text" 
+                                       class="form-input" 
+                                       name="upn" 
+                                       [(ngModel)]="registrationData.upn" 
+                                       placeholder="user@domain.com" 
+                                       required />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Assign Role <span class="required">*</span>
+                            </label>
+                            <div class="input-wrapper select-wrapper">
+                                <i class="fas fa-user-tag"></i>
+                                <select class="form-input form-select" 
+                                        name="roleId" 
+                                        [(ngModel)]="registrationData.roleId" 
+                                        required>
+                                    <option value="" disabled>Select a role...</option>
+                                    <option *ngFor="let role of roles" [value]="role.id">{{ role.name }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="message" class="alert-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>{{ message }}</span>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" (click)="goBack()">Cancel</button>
+                    <button type="submit" class="btn-submit" [disabled]="!regForm.form.valid || isLoading">
+                        <i class="fas fa-spinner fa-spin" *ngIf="isLoading"></i>
+                        <i class="fas fa-user-plus" *ngIf="!isLoading"></i>
+                        <span>{{ isLoading ? 'Creating...' : 'Create User' }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
