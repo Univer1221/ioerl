@@ -36,7 +36,9 @@
                                            [clearable]="true"
                                            [addTag]="addCustomUser"
                                            [addTagText]="'Use this name'"
-                                           (search)="onAdUserSearch($event.term)"
+                                           [typeahead]="adUserSearchInput$"
+                                           [loading]="adUserLoading"
+                                           [minTermLength]="3"
                                            (change)="onAdUserSelect($event)"
                                            (clear)="onAdUserClear()"
                                            class="custom-ng-select">
@@ -53,7 +55,6 @@
                                     <span>{{item.displayName}}</span>
                                 </ng-template>
                             </ng-select>
-                                <span *ngIf="adUserLoading" class="loader-inline"><i class="fas fa-spinner fa-spin"></i></span>
                             </div>
                             <input type="hidden" name="username" [(ngModel)]="registrationData.username" required />
                         </div>

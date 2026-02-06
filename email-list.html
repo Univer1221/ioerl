@@ -89,12 +89,14 @@
                             <div class="search-field-wrapper">
                                 <ng-select [items]="adUsersForRecipients"
                                            bindLabel="mail"
+                                           bindValue="mail"
                                            [(ngModel)]="emailData.toRecipients"
                                            name="toRecipients"
                                            placeholder="Search by name or email..."
+                                           [loading]="toRecipientsLoading"
                                            [clearable]="true"
-                                           (search)="onToRecipientsSearch($event.term)"
-                                           [compareWith]="compareRecipientEmails"
+                                           [minTermLength]="3"
+                                           [typeahead]="toRecipientsSearchInput$"
                                            class="custom-ng-select">
                                     <ng-template ng-option-tmp let-item="item">
                                         <div class="d-flex align-items-center">
@@ -102,8 +104,10 @@
                                             <small class="text-muted ms-2">{{item.mail}}</small>
                                         </div>
                                     </ng-template>
+                                    <ng-template ng-loadingspinner-tmp>
+                                        <i class="fas fa-spinner fa-spin text-primary"></i> Searching...
+                                    </ng-template>
                                 </ng-select>
-                                <span *ngIf="toRecipientsLoading" class="loader-inline"><i class="fas fa-spinner fa-spin"></i></span>
                             </div>
                         </div>
                         <div class="form-group">
@@ -111,12 +115,14 @@
                             <div class="search-field-wrapper">
                                 <ng-select [items]="adUsersForCCRecipients"
                                            bindLabel="mail"
+                                           bindValue="mail"
                                            [(ngModel)]="emailData.ccRecipients"
                                            name="ccRecipients"
                                            placeholder="Search by name or email..."
+                                           [loading]="ccRecipientsLoading"
                                            [clearable]="true"
-                                           (search)="onCCRecipientsSearch($event.term)"
-                                           [compareWith]="compareRecipientEmails"
+                                           [minTermLength]="3"
+                                           [typeahead]="ccRecipientsSearchInput$"
                                            class="custom-ng-select">
                                     <ng-template ng-option-tmp let-item="item">
                                         <div class="d-flex align-items-center">
@@ -124,8 +130,10 @@
                                             <small class="text-muted ms-2">{{item.mail}}</small>
                                         </div>
                                     </ng-template>
+                                    <ng-template ng-loadingspinner-tmp>
+                                        <i class="fas fa-spinner fa-spin text-primary"></i> Searching...
+                                    </ng-template>
                                 </ng-select>
-                                <span *ngIf="ccRecipientsLoading" class="loader-inline"><i class="fas fa-spinner fa-spin"></i></span>
                             </div>
                         </div>
                         <div class="form-group">

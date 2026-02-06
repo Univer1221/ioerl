@@ -32,7 +32,7 @@ export class LayoutComponent implements OnInit {
   dashboardUrl = '';
   isSidebarCollapsed = false;
   isUserDropdownOpen = false;
-  headerProfileImage: SafeUrl | string = '';
+  headerProfileImage: SafeUrl | string = IMAGE_PATHS.USER_PROFILE;
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent) {

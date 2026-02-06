@@ -123,24 +123,26 @@ export class EmailListComponent implements OnInit {
   }
 
   private setupRecipientsSearch(): void {
-    // Removed - using (search) event in template instead
-  }
-
-  onToRecipientsSearch(term: string): void {
-    if (!term || term.length < 2) {
-      this.adUsersForRecipients = [];
-      this.toRecipientsLoading = false;
-      this.cdr.markForCheck();
-      return;
-    }
-
-    this.toRecipientsLoading = true;
-    this.cdr.markForCheck();
-    this.applicationService.searchADUsers(term).pipe(
-      catchError(() => {
-        this.toRecipientsLoading = false;
-        this.cdr.markForCheck();
-        return of(null);
+    // To Recipients typeahead with debounce
+    this.toRecipientsSearchInput$.pipe(
+      tap(term => {
+        if (term && term.length >= 3) {
+          this.toRecipientsLoading = true;
+          this.cdr.markForCheck();
+        }
+      }),
+      debounceTime(500),
+      distinctUntilChanged(),
+      switchMap(term => {
+        if (!term || term.length < 3) {
+          this.toRecipientsLoading = false;
+          this.adUsersForRecipients = [];
+          this.cdr.markForCheck();
+          return of({ users: [] });
+        }
+        return this.applicationService.searchADUsers(term).pipe(
+          catchError(() => of({ users: [] }))
+        );
       })
     ).subscribe(response => {
       this.toRecipientsLoading = false;
@@ -149,23 +151,27 @@ export class EmailListComponent implements OnInit {
       }
       this.cdr.markForCheck();
     });
-  }
 
-  onCCRecipientsSearch(term: string): void {
-    if (!term || term.length < 2) {
-      this.adUsersForCCRecipients = [];
-      this.ccRecipientsLoading = false;
-      this.cdr.markForCheck();
-      return;
-    }
-
-    this.ccRecipientsLoading = true;
-    this.cdr.markForCheck();
-    this.applicationService.searchADUsers(term).pipe(
-      catchError(() => {
-        this.ccRecipientsLoading = false;
-        this.cdr.markForCheck();
-        return of(null);
+    // CC Recipients typeahead with debounce
+    this.ccRecipientsSearchInput$.pipe(
+      tap(term => {
+        if (term && term.length >= 3) {
+          this.ccRecipientsLoading = true;
+          this.cdr.markForCheck();
+        }
+      }),
+      debounceTime(500),
+      distinctUntilChanged(),
+      switchMap(term => {
+        if (!term || term.length < 3) {
+          this.ccRecipientsLoading = false;
+          this.adUsersForCCRecipients = [];
+          this.cdr.markForCheck();
+          return of({ users: [] });
+        }
+        return this.applicationService.searchADUsers(term).pipe(
+          catchError(() => of({ users: [] }))
+        );
       })
     ).subscribe(response => {
       this.ccRecipientsLoading = false;

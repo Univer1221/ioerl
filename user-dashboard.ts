@@ -27,7 +27,7 @@ export class UserDashboardComponent implements OnInit {
   private sanitizer = inject(DomSanitizer);
 
   public readonly IMAGE_PATHS = IMAGE_PATHS;
-  userProfileImage: SafeUrl | string = '';
+  userProfileImage: SafeUrl | string = IMAGE_PATHS.USER_PROFILE;
 
   private chart: any;
   private pieChart: any;

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
@@ -25,6 +25,7 @@ export class ApplicationFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private toastr = inject(ToastrService);
+  private cdr = inject(ChangeDetectorRef);
 
   appData: any = {
     id: 0,
@@ -59,7 +60,7 @@ export class ApplicationFormComponent implements OnInit {
   error: string = '';
 
   adUsers: any[] = [];
-  adUserSearchInput$ = new Subject<string>();
+  ownerSearchInput$ = new Subject<string>();
   adUserLoading: boolean = false;
   selectedAdUser: any = null;
 
@@ -82,7 +83,65 @@ export class ApplicationFormComponent implements OnInit {
   }
 
   setupAdUserSearch(): void {
-    // Removed - using (search) event in template instead
+    // Owner search typeahead with debounce
+    this.ownerSearchInput$.pipe(
+      tap(term => {
+        if (term && term.length >= 3) {
+          this.adUserLoading = true;
+          this.cdr.markForCheck();
+        }
+      }),
+      debounceTime(500),
+      distinctUntilChanged(),
+      switchMap(term => {
+        if (!term || term.length < 3) {
+          this.adUserLoading = false;
+          this.adUsers = [];
+          this.cdr.markForCheck();
+          return of({ users: [] });
+        }
+        return this.appService.searchADUsers(term).pipe(
+          catchError(() => of({ users: [] }))
+        );
+      })
+    ).subscribe(response => {
+      this.adUserLoading = false;
+      if (response && response.users) {
+        this.adUsers = response.users.filter((u: any) => u.mail).map((u: any) => ({ ...u, photoUrl: null }));
+        this.adUsers.forEach((u: any) => this.loadUserPhoto(u, 'owner'));
+      }
+      this.cdr.markForCheck();
+    });
+
+    // Co-Owner search typeahead with debounce
+    this.coOwnerSearchInput$.pipe(
+      tap(term => {
+        if (term && term.length >= 3) {
+          this.coOwnerLoading = true;
+          this.cdr.markForCheck();
+        }
+      }),
+      debounceTime(500),
+      distinctUntilChanged(),
+      switchMap(term => {
+        if (!term || term.length < 3) {
+          this.coOwnerLoading = false;
+          this.coOwnerAdUsers = [];
+          this.cdr.markForCheck();
+          return of({ users: [] });
+        }
+        return this.appService.searchADUsers(term).pipe(
+          catchError(() => of({ users: [] }))
+        );
+      })
+    ).subscribe(response => {
+      this.coOwnerLoading = false;
+      if (response && response.users) {
+        this.coOwnerAdUsers = response.users.filter((u: any) => u.mail).map((u: any) => ({ ...u, photoUrl: null }));
+        this.coOwnerAdUsers.forEach((u: any) => this.loadUserPhoto(u, 'coOwner'));
+      }
+      this.cdr.markForCheck();
+    });
   }
 
   loadUserPhoto(user: any, type: 'owner' | 'coOwner'): void {
@@ -91,50 +150,6 @@ export class ApplicationFormComponent implements OnInit {
         user.photoUrl = res.data;
         if (type === 'owner') this.adUsers = [...this.adUsers];
         else this.coOwnerAdUsers = [...this.coOwnerAdUsers];
-      }
-    });
-  }
-
-  onOwnerSearch(term: string): void {
-    if (!term || term.length < 2) {
-      this.adUsers = [];
-      this.adUserLoading = false;
-      return;
-    }
-
-    this.adUserLoading = true;
-    this.appService.searchADUsers(term).pipe(
-      catchError(() => {
-        this.adUserLoading = false;
-        return of(null);
-      })
-    ).subscribe(response => {
-      this.adUserLoading = false;
-      if (response && response.users) {
-        this.adUsers = response.users.filter((u: any) => u.mail).map((u: any) => ({ ...u, photoUrl: null }));
-        this.adUsers.forEach((u: any) => this.loadUserPhoto(u, 'owner'));
-      }
-    });
-  }
-
-  onCoOwnerSearch(term: string): void {
-    if (!term || term.length < 2) {
-      this.coOwnerAdUsers = [];
-      this.coOwnerLoading = false;
-      return;
-    }
-
-    this.coOwnerLoading = true;
-    this.appService.searchADUsers(term).pipe(
-      catchError(() => {
-        this.coOwnerLoading = false;
-        return of(null);
-      })
-    ).subscribe(response => {
-      this.coOwnerLoading = false;
-      if (response && response.users) {
-        this.coOwnerAdUsers = response.users.filter((u: any) => u.mail).map((u: any) => ({ ...u, photoUrl: null }));
-        this.coOwnerAdUsers.forEach((u: any) => this.loadUserPhoto(u, 'coOwner'));
       }
     });
   }

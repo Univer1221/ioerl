@@ -37,7 +37,9 @@
                                        [clearable]="true"
                                        [addTag]="addCustomOwner"
                                        [addTagText]="'Use this name'"
-                                       (search)="onOwnerSearch($event.term)"
+                                       [typeahead]="ownerSearchInput$"
+                                       [loading]="adUserLoading"
+                                       [minTermLength]="3"
                                        (change)="onAdUserSelect($event)"
                                        (clear)="onAdUserClear()"
                                        class="custom-ng-select-sm"
@@ -55,7 +57,6 @@
                                 <span>{{item.displayName}}</span>
                             </ng-template>
                             </ng-select>
-                            <span *ngIf="adUserLoading" class="loader-inline"><i class="fas fa-spinner fa-spin"></i></span>
                         </div>
                         <input type="hidden" name="appOwner" [(ngModel)]="appData.appOwner" required />
                     </div>
@@ -79,7 +80,9 @@
                                        [clearable]="true"
                                        [addTag]="addCustomOwner"
                                        [addTagText]="'Use this name'"
-                                       (search)="onCoOwnerSearch($event.term)"
+                                       [typeahead]="coOwnerSearchInput$"
+                                       [loading]="coOwnerLoading"
+                                       [minTermLength]="3"
                                        (change)="onCoOwnerSelect($event)"
                                        (clear)="onCoOwnerClear()"
                                        class="custom-ng-select-sm">
@@ -96,7 +99,6 @@
                                 <span>{{item.displayName}}</span>
                             </ng-template>
                             </ng-select>
-                            <span *ngIf="coOwnerLoading" class="loader-inline"><i class="fas fa-spinner fa-spin"></i></span>
                         </div>
                         <input type="hidden" name="coOwner" [(ngModel)]="appData.coOwner" />
                     </div>

@@ -1,9 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { firstValueFrom, Subject, of } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, switchMap, catchError, tap } from 'rxjs/operators';
 import { UserService } from '../../services/user';
 import { ApplicationService } from '../../services/application';
 import { Router } from '@angular/router';
@@ -22,6 +22,7 @@ export class AdminRegistrationComponent implements OnInit {
   private userService = inject(UserService);
   private appService = inject(ApplicationService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   registrationData: any = {
     email: '',
@@ -56,7 +57,35 @@ export class AdminRegistrationComponent implements OnInit {
   }
 
   setupAdUserSearch(): void {
-    // No subscription needed - we'll use (search) event in template instead
+    // AD User search typeahead with debounce
+    this.adUserSearchInput$.pipe(
+      tap(term => {
+        if (term && term.length >= 3) {
+          this.adUserLoading = true;
+          this.cdr.markForCheck();
+        }
+      }),
+      debounceTime(500),
+      distinctUntilChanged(),
+      switchMap(term => {
+        if (!term || term.length < 3) {
+          this.adUserLoading = false;
+          this.adUsers = [];
+          this.cdr.markForCheck();
+          return of({ users: [] });
+        }
+        return this.appService.searchADUsers(term).pipe(
+          catchError(() => of({ users: [] }))
+        );
+      })
+    ).subscribe(response => {
+      this.adUserLoading = false;
+      if (response && response.users) {
+        this.adUsers = response.users.filter((u: any) => u.mail).map((u: any) => ({ ...u, photoUrl: null }));
+        this.adUsers.forEach((u: any) => this.loadUserPhoto(u));
+      }
+      this.cdr.markForCheck();
+    });
   }
 
   loadUserPhoto(user: any): void {
@@ -64,28 +93,6 @@ export class AdminRegistrationComponent implements OnInit {
       if (res?.success && res?.data) {
         user.photoUrl = res.data;
         this.adUsers = [...this.adUsers];
-      }
-    });
-  }
-
-  onAdUserSearch(term: string): void {
-    if (!term || term.length < 2) {
-      this.adUsers = [];
-      this.adUserLoading = false;
-      return;
-    }
-
-    this.adUserLoading = true;
-    this.appService.searchADUsers(term).pipe(
-      catchError(() => {
-        this.adUserLoading = false;
-        return of(null);
-      })
-    ).subscribe(response => {
-      this.adUserLoading = false;
-      if (response && response.users) {
-        this.adUsers = response.users.filter((u: any) => u.mail).map((u: any) => ({ ...u, photoUrl: null }));
-        this.adUsers.forEach((u: any) => this.loadUserPhoto(u));
       }
     });
   }
