@@ -1,0 +1,174 @@
+<div class="container-fluid animate-fade-in py-2" *ngIf="userProfile">
+    <div class="card shadow-sm border-0 mb-2 overflow-hidden dashboard-header-card glass-panel">
+        <div class="card-body p-2">
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                <div>
+                    <h5 class="mb-1 text-dark font-weight-bold">
+                        Welcome, <span class="text-primary">{{ userProfile.email.split('@')[0] }}</span>
+                    </h5>
+                    <p class="text-muted smallest mb-0">System administration and performance metrics overview</p>
+                </div>
+                <div class="mt-2 mt-md-0 d-flex flex-wrap gap-2 align-items-center">
+                    <ng-select id="appSelect" name="appSelect" [(ngModel)]="selectedAppId" 
+                               [items]="emailCount" bindLabel="appName" bindValue="appId"
+                               (change)="onchangeApp($event)" [clearable]="false"
+                               class="custom-ng-select-sm app-select-dropdown-admin" placeholder="Select Application">
+                    </ng-select>
+                    <div class="d-flex align-items-center bg-white px-2 py-1 rounded border shadow-xs">
+                        <div class="icon-circle icon-circle-small bg-primary-soft me-2">
+                            <i class="fas fa-calendar-alt text-primary smallest"></i>
+                        </div>
+                        <div>
+                            <div class="smallest text-muted">Member Since</div>
+                            <div class="smallest font-weight-bold text-dark">{{ userProfile.creationDateTime | date:'MMM yyyy' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow-sm mb-2 animate-fade-in animation-delay-1 border-0">
+                <div class="card-header bg-white py-2 border-0">
+                    <h6 class="m-0 font-weight-bold text-primary smallest text-uppercase letter-spacing-1">Email Delivery Trends</h6>
+                </div>
+                <div class="card-body p-1">
+                    <div class="chart-area chart-area-admin">
+                        <canvas #myChart id="myChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow-sm mb-2 animate-fade-in animation-delay-2 border-0">
+                <div class="card-header bg-white py-2 border-0 d-flex align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary smallest text-uppercase letter-spacing-1">Period Breakdown</h6>
+                </div>
+                <div class="card-body p-1">
+                    <div class="chart-area chart-area-breakdown">
+                        <canvas #breakdownChart id="breakdownChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row animate-fade-in animation-delay-3 mb-1">
+        <div class="col-xl-2 col-md-4 col-6 mb-2 px-1">
+            <app-stat-card title="Today" [value]="todayAllEmail" icon="fa-envelope" color="primary" class="h-100"></app-stat-card>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6 mb-2 px-1">
+            <app-stat-card title="7 Days" [value]="lastSevenDaysEmail" icon="fa-calendar-week" color="info" class="h-100"></app-stat-card>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6 mb-2 px-1">
+            <app-stat-card title="30 Days" [value]="lastThirtyDaysEmail" icon="fa-calendar-alt" color="primary" class="h-100"></app-stat-card>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6 mb-2 px-1">
+            <app-stat-card [title]="currentMonthName" [value]="monthlyEmail" icon="fa-calendar-check" color="primary" class="h-100"></app-stat-card>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6 mb-2 px-1">
+            <app-stat-card title="Yearly" [value]="yearlyEmail" icon="fa-history" color="info" class="h-100"></app-stat-card>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6 mb-2 px-1">
+            <app-stat-card title="Total" [value]="totalSentEmail" icon="fa-paper-plane" color="danger" class="h-100"></app-stat-card>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-9">
+            <div class="card shadow-sm mb-2 animate-fade-in animation-delay-4 border-0">
+                <div class="card-header bg-white py-2 border-0">
+                    <h6 class="m-0 font-weight-bold text-primary smallest text-uppercase letter-spacing-1">
+                        <i class="fas fa-chart-bar me-2 text-warning"></i>Top 10 Application Utilisation
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 smallest">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="border-0 py-2 px-3 text-muted col-rank">#</th>
+                                    <th class="border-0 py-2 px-3 text-muted">Application</th>
+                                    <th class="border-0 py-2 px-3 text-muted text-center">Today</th>
+                                    <th class="border-0 py-2 px-3 text-muted text-center">7 Days</th>
+                                    <th class="border-0 py-2 px-3 text-muted text-center">30 Days</th>
+                                    <th class="border-0 py-2 px-3 text-muted text-center">Total</th>
+                                    <th class="border-0 py-2 px-3 text-muted text-center">Share</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let app of getTop10Apps(); let i = index" class="align-middle">
+                                    <td class="py-2 px-3">
+                                        <span class="badge rounded-pill" 
+                                              [ngClass]="{'bg-warning text-dark': i === 0, 'bg-secondary': i === 1, 'bg-danger': i === 2, 'bg-light text-dark': i > 2}">
+                                            {{ app.ranking || i + 1 }}
+                                        </span>
+                                    </td>
+                                    <td class="py-2 px-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle icon-circle-small me-2" 
+                                                 [ngClass]="{'bg-warning-soft': i === 0, 'bg-secondary-soft': i === 1, 'bg-danger-soft': i === 2, 'bg-info-soft': i > 2}">
+                                                <i class="fas fa-cube smallest" 
+                                                   [ngClass]="{'text-warning': i === 0, 'text-secondary': i === 1, 'text-danger': i === 2, 'text-info': i > 2}"></i>
+                                            </div>
+                                            <span class="font-weight-medium">{{ app.appName }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-2 px-3 text-center">
+                                        <span class="badge bg-primary-soft text-primary">{{ app.todayEmail | number }}</span>
+                                    </td>
+                                    <td class="py-2 px-3 text-center">
+                                        <span class="badge bg-info-soft text-info">{{ app.lastSevenDaysEmail | number }}</span>
+                                    </td>
+                                    <td class="py-2 px-3 text-center">
+                                        <span class="badge bg-success-soft text-success">{{ app.lastThirtyDaysEmail | number }}</span>
+                                    </td>
+                                    <td class="py-2 px-3 text-center">
+                                        <span class="badge bg-danger-soft text-danger font-weight-bold">{{ app.totalSentEmail | number }}</span>
+                                    </td>
+                                    <td class="py-2 px-3 text-center">
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            <div class="progress flex-grow-1 me-2 progress-share">
+                                                <div class="progress-bar bg-gradient-primary" [style.width.%]="app.percentageOfTotal"></div>
+                                            </div>
+                                            <span class="smallest text-muted">{{ app.percentageOfTotal | number:'1.1-1' }}%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr *ngIf="getTop10Apps().length === 0">
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                        No application data available
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3">
+            <div class="card shadow-sm mb-2 animate-fade-in animation-delay-4 border-0">
+                <div class="card-header bg-white py-2 border-0">
+                    <h6 class="m-0 font-weight-bold text-primary smallest text-uppercase letter-spacing-1">User Overview</h6>
+                </div>
+                <div class="card-body p-2">
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                        <span class="smallest text-muted">Registered</span>
+                        <span class="badge bg-info">{{ totalAppUser }}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                        <span class="smallest text-muted">Active</span>
+                        <span class="badge bg-success">{{ activeAppUser }}</span>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="smallest text-muted">Pending</span>
+                        <span class="badge bg-danger">{{ inactiveAppUser }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

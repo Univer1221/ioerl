@@ -219,7 +219,7 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th class="col-user">User (UPN)</th>
+                        <th class="col-user">Owner</th>
                         <th class="col-app">Application</th>
                         <th class="col-subject">Subject & Preview</th>
                         <th class="col-service">Email Service</th>
@@ -238,8 +238,8 @@
                     <tr *ngFor="let item of emailList; trackBy: trackByEmailId" class="data-row">
                         <td>
                             <div class="table-info">
-                                <span class="table-info-primary" [title]="item.upn">{{ item.upn }}</span>
-                                <span class="table-info-secondary" [title]="item.username">{{ item.username }}</span>
+                                <span class="table-info-primary" [title]="item.username">{{ item.username }}</span>
+                                <span class="table-info-secondary" [title]="item.upn">{{ item.upn }}</span>
                             </div>
                         </td>
                         <td>
@@ -295,8 +295,8 @@
                 <div class="item-card" *ngFor="let item of emailList; trackBy: trackByEmailId">
                     <div class="card-header">
                         <div class="card-info">
-                            <div class="card-info-secondary">{{ item.upn }}</div>
                             <div class="card-info-primary">{{ item.username }}</div>
+                            <div class="card-info-secondary">{{ item.upn }}</div>
                         </div>
                         <span class="status-badge" [class.sent]="item.status === 'Sent'" 
                               [class.pending]="item.status === 'Pending'" 

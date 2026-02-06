@@ -346,7 +346,8 @@ export class EmailListComponent implements OnInit {
       switchMap((response: any) => {
         this.toastr.success(EMAIL_MESSAGES.TEST_EMAIL_SUCCESS, MESSAGE_TITLES.SUCCESS);
         
-        // Skip guidance email for TP Internal config
+        // Only attempt guidance email if coming from app creation flow (credentials stored in session)
+        // Skip for TP Internal config and skip silently if credentials not available
         if (this.emailData.appId && !isUsingTPInternal) {
           const appId = +this.emailData.appId;
           // Explicitly fetch all necessary application details as per architectural direction
@@ -359,8 +360,8 @@ export class EmailListComponent implements OnInit {
                 const appSecret = await this.secureStorage.getItem<string>(`app_${appId}_appSecret`, true);
                 const coOwnerEmail = await this.secureStorage.getItem<string>(`app_${appId}_coOwnerEmail`, true);
                 
+                // Silently skip guidance email if credentials not available (not from app creation flow)
                 if (!ownerEmail || !appSecret || appPassword === null) {
-                  this.toastr.warning(EMAIL_MESSAGES.GUIDANCE_MISSING_CREDENTIALS, MESSAGE_TITLES.WARNING);
                   return of(response);
                 }
                 

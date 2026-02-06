@@ -115,7 +115,8 @@ export class UserDashboardComponent implements OnInit {
       const allDashboardData = results.dashboard?.resultData || [];
       this.top10Apps = (results.top10?.resultData || []).filter((x: any) => x.totalSentEmail > 0);
       this.emailCount = [...allDashboardData.filter((x: any) => x.appId !== 0)];
-      this.totalApplications = this.emailCount.length;
+      // Use appList.length for actual application count (not email count data)
+      this.totalApplications = this.appList.length;
 
       // Add "ALL" option - always present
       this.emailCount.push({
